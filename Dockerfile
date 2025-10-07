@@ -87,7 +87,7 @@ ENV PIP_NO_INPUT=1
 # Copy helper script to switch Manager network mode at container start
 COPY scripts/comfy-manager-set-mode.sh /usr/local/bin/comfy-manager-set-mode
 RUN chmod +x /usr/local/bin/comfy-manager-set-mode
-
+RUN comfy-node-install comfyui-hunyuanvideowrapper 
 # Set the default command to run when starting the container
 CMD ["/start.sh"]
 
@@ -96,13 +96,14 @@ FROM base AS downloader
 
 ARG HUGGINGFACE_ACCESS_TOKEN
 # Set default model type if none is provided
-ARG MODEL_TYPE=qwen-image-edit
+ARG MODEL_TYPE=hunyuan-video
 
 # Change working directory to ComfyUI
 WORKDIR /comfyui
 
 # Create necessary directories upfront
-RUN mkdir -p models/checkpoints models/vae models/unet models/clip models/diffusion_models models/loras models/text_encoders
+RUN mkdir -p models/checkpoints models/vae models/unet models/clip models/diffusion_models models/loras models/loras/custom models/text_encoders
+RUN ln -s /workspace/loras /comfyui/models/loras/custom
 
 # Download checkpoints/vae/unet/clip models to include in image based on model type
 RUN if [ "$MODEL_TYPE" = "sdxl" ]; then \
@@ -138,6 +139,14 @@ RUN if [ "$MODEL_TYPE" = "qwen-image-edit" ]; then \
       comfy model download --url https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors --relative-path models/loras --filename Qwen-Image-Lightning-4steps-V1.0.safetensors && \
       comfy model download --url https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors --relative-path models/text_encoders --filename qwen_2.5_vl_7b_fp8_scaled.safetensors && \
       comfy model download --url https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors --relative-path models/vae --filename qwen_image_vae.safetensors; \
+    fi
+
+    RUN if [ "$MODEL_TYPE" = "hunyuan-video" ]; then \
+      huggingface-cli login --token ${HUGGINGFACE_ACCESS_TOKEN} && \
+      comfy model download --url https://huggingface.co/Kijai/HunyuanVideo_comfy/resolve/main/hunyuan_video_720_cfgdistill_fp8_e4m3fn.safetensors --relative-path models/diffusion_models --filename hunyuan_video_720_cfgdistill_fp8_e4m3fn.safetensors && \
+      comfy model download --url https://huggingface.co/Kijai/HunyuanVideo_comfy/resolve/main/hunyuan_video_vae_bf16.safetensors --relative-path models/vae --filename hunyuan_video_vae_bf16.safetensors; \
+      huggingface-cli download Kijai/llava-llama-3-8b-text-encoder-tokenizer --local-dir models/text_encoders && \
+      huggingface-cli download openai/clip-vit-large-patch14 --local-dir models/clip && \
     fi
 
 # Stage 3: Final image
