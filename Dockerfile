@@ -98,6 +98,9 @@ ARG HUGGINGFACE_ACCESS_TOKEN
 # Set default model type if none is provided
 ARG MODEL_TYPE=hunyuan-video
 
+# Install huggingface-cli for downloading models
+RUN uv pip install huggingface-hub
+
 # Change working directory to ComfyUI
 WORKDIR /comfyui
 
