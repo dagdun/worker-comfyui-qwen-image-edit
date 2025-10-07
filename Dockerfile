@@ -95,8 +95,6 @@ CMD ["/start.sh"]
 FROM base AS downloader
 
 ARG HUGGINGFACE_ACCESS_TOKEN
-# Set default model type if none is provided
-ARG MODEL_TYPE=hunyuan-video
 
 # Install huggingface-cli for downloading models
 RUN uv pip install huggingface-hub
@@ -108,49 +106,20 @@ WORKDIR /comfyui
 RUN mkdir -p models/checkpoints models/vae models/unet models/clip models/diffusion_models models/loras models/loras/custom models/text_encoders
 RUN ln -s /workspace/loras /comfyui/models/loras/custom
 
-# Download checkpoints/vae/unet/clip models to include in image based on model type
-RUN if [ "$MODEL_TYPE" = "sdxl" ]; then \
-      wget -q -O models/checkpoints/sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors && \
-      wget -q -O models/vae/sdxl_vae.safetensors https://huggingface.co/stabilityai/sdxl-vae/resolve/main/sdxl_vae.safetensors && \
-      wget -q -O models/vae/sdxl-vae-fp16-fix.safetensors https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/resolve/main/sdxl_vae.safetensors; \
-    fi
+# Set HuggingFace token for authentication
+ENV HF_TOKEN=${HUGGINGFACE_ACCESS_TOKEN}
 
-RUN if [ "$MODEL_TYPE" = "sd3" ]; then \
-      wget -q --header="Authorization: Bearer ${HUGGINGFACE_ACCESS_TOKEN}" -O models/checkpoints/sd3_medium_incl_clips_t5xxlfp8.safetensors https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/sd3_medium_incl_clips_t5xxlfp8.safetensors; \
-    fi
+# Download Hunyuan Video diffusion model
+RUN comfy model download --url https://huggingface.co/Kijai/HunyuanVideo_comfy/resolve/main/hunyuan_video_720_cfgdistill_fp8_e4m3fn.safetensors --relative-path models/diffusion_models --filename hunyuan_video_720_cfgdistill_fp8_e4m3fn.safetensors
 
-RUN if [ "$MODEL_TYPE" = "flux1-schnell" ]; then \
-      wget -q --header="Authorization: Bearer ${HUGGINGFACE_ACCESS_TOKEN}" -O models/unet/flux1-schnell.safetensors https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors && \
-      wget -q -O models/clip/clip_l.safetensors https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors && \
-      wget -q -O models/clip/t5xxl_fp8_e4m3fn.safetensors https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors && \
-      wget -q --header="Authorization: Bearer ${HUGGINGFACE_ACCESS_TOKEN}" -O models/vae/ae.safetensors https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors; \
-    fi
+# Download Hunyuan Video VAE
+RUN comfy model download --url https://huggingface.co/Kijai/HunyuanVideo_comfy/resolve/main/hunyuan_video_vae_bf16.safetensors --relative-path models/vae --filename hunyuan_video_vae_bf16.safetensors
 
-RUN if [ "$MODEL_TYPE" = "flux1-dev" ]; then \
-      wget -q --header="Authorization: Bearer ${HUGGINGFACE_ACCESS_TOKEN}" -O models/unet/flux1-dev.safetensors https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors && \
-      wget -q -O models/clip/clip_l.safetensors https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors && \
-      wget -q -O models/clip/t5xxl_fp8_e4m3fn.safetensors https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors && \
-      wget -q --header="Authorization: Bearer ${HUGGINGFACE_ACCESS_TOKEN}" -O models/vae/ae.safetensors https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/ae.safetensors; \
-    fi
+# Download text encoder
+RUN huggingface-cli download Kijai/llava-llama-3-8b-text-encoder-tokenizer --local-dir models/text_encoders --token ${HUGGINGFACE_ACCESS_TOKEN}
 
-RUN if [ "$MODEL_TYPE" = "flux1-dev-fp8" ]; then \
-      wget -q -O models/checkpoints/flux1-dev-fp8.safetensors https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors; \
-    fi
-
-RUN if [ "$MODEL_TYPE" = "qwen-image-edit" ]; then \
-      comfy model download --url https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2509_fp8_e4m3fn.safetensors --relative-path models/diffusion_models --filename qwen_image_edit_2509_fp8_e4m3fn.safetensors && \
-      comfy model download --url https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors --relative-path models/loras --filename Qwen-Image-Lightning-4steps-V1.0.safetensors && \
-      comfy model download --url https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors --relative-path models/text_encoders --filename qwen_2.5_vl_7b_fp8_scaled.safetensors && \
-      comfy model download --url https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors --relative-path models/vae --filename qwen_image_vae.safetensors; \
-    fi
-
-RUN if [ "$MODEL_TYPE" = "hunyuan-video" ]; then \
-      export HF_TOKEN=${HUGGINGFACE_ACCESS_TOKEN} && \
-      comfy model download --url https://huggingface.co/Kijai/HunyuanVideo_comfy/resolve/main/hunyuan_video_720_cfgdistill_fp8_e4m3fn.safetensors --relative-path models/diffusion_models --filename hunyuan_video_720_cfgdistill_fp8_e4m3fn.safetensors && \
-      comfy model download --url https://huggingface.co/Kijai/HunyuanVideo_comfy/resolve/main/hunyuan_video_vae_bf16.safetensors --relative-path models/vae --filename hunyuan_video_vae_bf16.safetensors && \
-      huggingface-cli download Kijai/llava-llama-3-8b-text-encoder-tokenizer --local-dir models/text_encoders --token ${HUGGINGFACE_ACCESS_TOKEN} && \
-      huggingface-cli download openai/clip-vit-large-patch14 --local-dir models/clip --token ${HUGGINGFACE_ACCESS_TOKEN}; \
-    fi
+# Download CLIP model
+RUN huggingface-cli download openai/clip-vit-large-patch14 --local-dir models/clip --token ${HUGGINGFACE_ACCESS_TOKEN}
 
 # Stage 3: Final image
 FROM base AS final
