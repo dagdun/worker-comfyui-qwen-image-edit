@@ -87,14 +87,12 @@ ENV PIP_NO_INPUT=1
 # Copy helper script to switch Manager network mode at container start
 COPY scripts/comfy-manager-set-mode.sh /usr/local/bin/comfy-manager-set-mode
 RUN chmod +x /usr/local/bin/comfy-manager-set-mode
-RUN comfy-node-install comfyui-hunyuanvideowrapper 
+RUN comfy-node-install comfyui-hunyuanvideowrapper ComfyUI-VideoHelperSuite
 # Set the default command to run when starting the container
 CMD ["/start.sh"]
 
 # Stage 2: Download models
 FROM base AS downloader
-
-ARG HUGGINGFACE_ACCESS_TOKEN
 
 # Install huggingface-cli for downloading models
 RUN uv pip install huggingface-hub
