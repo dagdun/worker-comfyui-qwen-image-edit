@@ -144,12 +144,12 @@ RUN if [ "$MODEL_TYPE" = "qwen-image-edit" ]; then \
       comfy model download --url https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors --relative-path models/vae --filename qwen_image_vae.safetensors; \
     fi
 
-    RUN if [ "$MODEL_TYPE" = "hunyuan-video" ]; then \
-      huggingface-cli login --token ${HUGGINGFACE_ACCESS_TOKEN} && \
+RUN if [ "$MODEL_TYPE" = "hunyuan-video" ]; then \
+      export HF_TOKEN=${HUGGINGFACE_ACCESS_TOKEN} && \
       comfy model download --url https://huggingface.co/Kijai/HunyuanVideo_comfy/resolve/main/hunyuan_video_720_cfgdistill_fp8_e4m3fn.safetensors --relative-path models/diffusion_models --filename hunyuan_video_720_cfgdistill_fp8_e4m3fn.safetensors && \
       comfy model download --url https://huggingface.co/Kijai/HunyuanVideo_comfy/resolve/main/hunyuan_video_vae_bf16.safetensors --relative-path models/vae --filename hunyuan_video_vae_bf16.safetensors && \
-      huggingface-cli download Kijai/llava-llama-3-8b-text-encoder-tokenizer --local-dir models/text_encoders && \
-      huggingface-cli download openai/clip-vit-large-patch14 --local-dir models/clip; \
+      huggingface-cli download Kijai/llava-llama-3-8b-text-encoder-tokenizer --local-dir models/text_encoders --token ${HUGGINGFACE_ACCESS_TOKEN} && \
+      huggingface-cli download openai/clip-vit-large-patch14 --local-dir models/clip --token ${HUGGINGFACE_ACCESS_TOKEN}; \
     fi
 
 # Stage 3: Final image
