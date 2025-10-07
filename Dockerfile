@@ -107,6 +107,7 @@ RUN mkdir -p models/checkpoints models/vae models/unet models/clip models/diffus
 RUN ln -s /workspace/loras /comfyui/models/loras/custom
 
 # Set HuggingFace token for authentication
+ARG HUGGINGFACE_ACCESS_TOKEN
 ENV HF_TOKEN=${HUGGINGFACE_ACCESS_TOKEN}
 
 # Download Hunyuan Video diffusion model
@@ -116,10 +117,10 @@ RUN comfy model download --url https://huggingface.co/Kijai/HunyuanVideo_comfy/r
 RUN comfy model download --url https://huggingface.co/Kijai/HunyuanVideo_comfy/resolve/main/hunyuan_video_vae_bf16.safetensors --relative-path models/vae --filename hunyuan_video_vae_bf16.safetensors
 
 # Download text encoder
-RUN huggingface-cli download Kijai/llava-llama-3-8b-text-encoder-tokenizer --local-dir models/text_encoders --token ${HUGGINGFACE_ACCESS_TOKEN}
+RUN huggingface-cli download Kijai/llava-llama-3-8b-text-encoder-tokenizer --local-dir models/text_encoders
 
 # Download CLIP model
-RUN huggingface-cli download openai/clip-vit-large-patch14 --local-dir models/clip --token ${HUGGINGFACE_ACCESS_TOKEN}
+RUN huggingface-cli download openai/clip-vit-large-patch14 --local-dir models/clip
 
 # Stage 3: Final image
 FROM base AS final
