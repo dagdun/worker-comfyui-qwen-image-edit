@@ -87,7 +87,6 @@ ENV PIP_NO_INPUT=1
 # Copy helper script to switch Manager network mode at container start
 COPY scripts/comfy-manager-set-mode.sh /usr/local/bin/comfy-manager-set-mode
 RUN chmod +x /usr/local/bin/comfy-manager-set-mode
-RUN comfy node install comfyui-hunyuanvideowrapper comfyui-videohelpersuite
 RUN pip install sageattention
 # Set the default command to run when starting the container
 CMD ["/start.sh"]
@@ -100,6 +99,7 @@ RUN uv pip install huggingface-hub
 
 # Change working directory to ComfyUI
 WORKDIR /comfyui
+RUN comfy node install comfyui-hunyuanvideowrapper comfyui-videohelpersuite
 
 # Create necessary directories upfront
 RUN mkdir -p models/checkpoints models/vae models/unet models/clip models/diffusion_models models/loras models/loras/custom models/text_encoders
